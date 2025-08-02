@@ -2,12 +2,13 @@ pipeline {
     agent any
 
     tools {
-        maven 'Mymaven'        // Set this name in Jenkins → Global Tool Configuration
-        jdk 'Java17'          // Set this name as Java 17 path in Jenkins
+        maven 'Mymaven'        // Jenkins → Global Tool Configuration
+        jdk 'Java17'           // Jenkins → Global Tool Configuration
     }
 
     environment {
-        SONARQUBE = 'MySonarQube'              // Jenkins → Configure SonarQube servers
+        SONARQUBE = 'MySonarQube'                          // Jenkins → Configure SonarQube servers
+        SONAR_TOKEN = credentials('sonar-token')           // Add your SonarQube token in Jenkins credentials (Secret Text)
         ARTIFACTORY_CREDS = credentials('artifactory-creds') // Jenkins → Credentials (username/password or API Key)
     }
 
@@ -33,7 +34,7 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv("${env.SONARQUBE}") {
-                    sh 'mvn sonar:sonar'
+                    sh 'mvn sonar:sonar -Dsonar.login=$SONAR_TOKEN'
                 }
             }
         }
@@ -54,10 +55,10 @@ pipeline {
 
     post {
         success {
-            echo "Build and Deployment successful!"
+            echo "✅ Build and Deployment successful!"
         }
         failure {
-            echo "Build or Deployment failed. Check logs."
+            echo "❌ Build or Deployment failed. Check logs."
         }
     }
 }
