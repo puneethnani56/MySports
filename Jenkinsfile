@@ -39,7 +39,7 @@ pipeline {
       steps {
         withCredentials([usernamePassword(credentialsId: 'artifactory-creds', usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
           sh '''
-            curl -u $ART_USER:$ART_PASS -T target/my-sports.war "http://<your-artifactory-host>:8081/artifactory/libs-release-local/my-sports.war"
+            curl -u $ART_USER:$ART_PASS -T target/my-sports.war "http://localhost:8081/artifactory/libs-release-local/my-sports.war"
           '''
         }
       }
