@@ -9,7 +9,7 @@ pipeline {
     environment {
         SONARQUBE = 'MySonarQube'                          // Jenkins → Configure SonarQube servers
         SONAR_TOKEN = credentials('sonar-token')           // Add your SonarQube token in Jenkins credentials (Secret Text)
-        ARTIFACTORY_CREDS = credentials('artifactory-creds') // Jenkins → Credentials (username/password or API Key)
+        ARTIFACTORY_CREDS = credentials('artifactory-creds') // Jenkins → Credentials (username/password)
     }
 
     stages {
@@ -41,10 +41,30 @@ pipeline {
 
         stage('Deploy Artifact to JFrog Artifactory') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'artifactory-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                withCredentials([
+                    usernamePassword(credentialsId: 'artifactory-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')
+                ]) {
+                    // Write custom settings.xml file dynamically
+                    writeFile file: 'custom-settings.xml', text: """
+                        <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+                                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                                  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                                                      https://maven.apache.org/xsd/settings-1.0.0.xsd">
+                          <servers>
+                            <server>
+                              <id>jfrog-repo</id>
+                              <username>${USERNAME}</username>
+                              <password>${PASSWORD}</password>
+                            </server>
+                          </servers>
+                        </settings>
+                    """
+
+                    // Use the custom settings file for deployment
                     sh '''
                         mvn deploy -DskipTests \
-                            -DaltDeploymentRepository=jfrog-repo::default::http://localhost:8082/artifactory/libs-release-local \
+                            -s custom-settings.xml \
+                            -DaltDeploymentRepository=jfrog-repo::default::http://localhost:8082/artifactory/libs-release-local
                     '''
                 }
             }
