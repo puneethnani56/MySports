@@ -67,7 +67,7 @@
         </configuration>
       </plugin>
 
-      <!-- ✅ Fix: Modern WAR Plugin -->
+      <!-- WAR Plugin -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-war-plugin</artifactId>
@@ -76,5 +76,17 @@
     </plugins>
   </build>
 
-</project>
+  <distributionManagement>
+    <repository>
+      <id>jfrog-repo</id>
+      <name>JFrog Release Repository</name>
+      <url>http://localhost:8082/artifactory/libs-release-local</url>
+    </repository>
+    <snapshotRepository>
+      <id>jfrog-repo</id>
+      <name>JFrog Snapshot Repository</name>
+      <url>http://localhost:8082/artifactory/libs-snapshot-local</url>
+    </snapshotRepository>
+  </distributionManagement>
 
+</project>
