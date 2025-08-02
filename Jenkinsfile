@@ -1,58 +1,63 @@
 pipeline {
-  agent any
+    agent any
 
-  tools {
-    maven 'Mymaven'       // use the name from Jenkins config
-    jdk 'Java17'          // or the name you actually configured
-  }
-
-  environment {
-    SONAR_TOKEN = credentials('sonar-token')
-  }
-
-  stages {
-    stage('Clone') {
-      steps {
-        git 'https://github.com/puneethnani56/MySports.git'
-      }
+    tools {
+        maven 'Maven3'        // Set this name in Jenkins → Global Tool Configuration
+        jdk 'Java17'          // Set this name as Java 17 path in Jenkins
     }
 
-    stage('Build & Test') {
-      steps {
-        sh 'mvn clean test'
-      }
+    environment {
+        SONARQUBE = 'MySonarQube'              // Jenkins → Configure SonarQube servers
+        ARTIFACTORY_CREDS = credentials('artifactory-creds') // Jenkins → Credentials (username/password or API Key)
     }
 
-    stage('Code Quality - SonarQube') {
-      steps {
-        withSonarQubeEnv('MySonarQube') {
-          sh '''
-            mvn sonar:sonar \
-              -Dsonar.projectKey=my-sports \
-              -Dsonar.host.url=http://localhost:9000 \
-              -Dsonar.login=$SONAR_TOKEN
-          '''
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/puneethnani56/MySports.git'
+            }
         }
-      }
+
+        stage('Build & Unit Test') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
+
+        stage('Code Coverage Report (JaCoCo)') {
+            steps {
+                sh 'mvn test'
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv("${env.SONARQUBE}") {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
+
+        stage('Deploy Artifact to JFrog Artifactory') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'artifactory-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh '''
+                        mvn deploy -DskipTests \
+                            -DaltDeploymentRepository=jfrog-repo::default::http://localhost:8082/artifactory/libs-release-local \
+                            -Dusername=$USERNAME \
+                            -Dpassword=$PASSWORD
+                    '''
+                }
+            }
+        }
     }
 
-    stage('Package') {
-      steps {
-        sh 'mvn package'
-      }
+    post {
+        success {
+            echo "Build and Deployment successful!"
+        }
+        failure {
+            echo "Build or Deployment failed. Check logs."
+        }
     }
-
-    stage('Upload Artifact to Artifactory') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: 'artifactory-creds', usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
-          sh '''
-            echo "Uploading WAR to Artifactory..."
-            curl -i -u $ART_USER:$ART_PASS \
-            -T target/my-sports-1.0.0.war \
-            "http://localhost:8082/artifactory/libs-release-local/com/mysports/my-sports/1.0.0/my-sports-1.0.0.war"
-          '''
-        }  
-      }
-    }
-  }
 }
