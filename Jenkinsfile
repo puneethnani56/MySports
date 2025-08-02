@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven3'        // Set this name in Jenkins → Global Tool Configuration
+        maven 'Mymaven'        // Set this name in Jenkins → Global Tool Configuration
         jdk 'Java17'          // Set this name as Java 17 path in Jenkins
     }
 
