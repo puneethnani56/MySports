@@ -45,8 +45,6 @@ pipeline {
                     sh '''
                         mvn deploy -DskipTests \
                             -DaltDeploymentRepository=jfrog-repo::default::http://localhost:8082/artifactory/libs-release-local \
-                            -Dusername=$USERNAME \
-                            -Dpassword=$PASSWORD
                     '''
                 }
             }
