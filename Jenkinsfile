@@ -2,8 +2,8 @@ pipeline {
   agent any
 
   tools {
-    maven 'Maven3'
-    jdk 'OpenJDK11'
+    maven 'Mymaven'       // use the name from Jenkins config
+    jdk 'Java11'          // or the name you actually configured
   }
 
   environment {
@@ -47,7 +47,6 @@ pipeline {
         withCredentials([usernamePassword(credentialsId: 'artifactory-creds', usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
           sh '''
             echo "Uploading WAR to Artifactory..."
-
             curl -i -u $ART_USER:$ART_PASS \
             -T target/my-sports-1.0.0.war \
             "http://localhost:8082/artifactory/libs-release-local/com/mysports/my-sports/1.0.0/my-sports-1.0.0.war"
