@@ -1,0 +1,28 @@
+- name: Deploy WAR to local Tomcat
+  hosts: local
+  become: true
+  tasks:
+    - name: Download WAR file from Artifactory
+      get_url:
+        url: http://localhost:8082/artifactory/libs-release-local/com/mysports/my-sports/1.0/my-sports-1.0.war
+        dest: /tmp/my-sports.war
+        username: "{{ art_user }}"
+        password: "{{ art_pass }}"
+
+    - name: Stop Tomcat
+      shell: /mnt/c/Users/punee/tomcat/apache-tomcat-9.0.89/apache-tomcat-9.0.89/bin/shutdown.sh
+      ignore_errors: yes
+
+    - name: Remove old WAR from Tomcat
+      file:
+        path: /mnt/c/Users/punee/tomcat/apache-tomcat-9.0.89/apache-tomcat-9.0.89/webapps/my-sports.war
+        state: absent
+
+    - name: Copy WAR to Tomcat webapps
+      copy:
+        src: /tmp/my-sports.war
+        dest: /mnt/c/Users/punee/tomcat/apache-tomcat-9.0.89/apache-tomcat-9.0.89/webapps/my-sports.war
+        mode: '0644'
+
+    - name: Start Tomcat
+      shell: /mnt/c/Users/punee/tomcat/apache-tomcat-9.0.89/apache-tomcat-9.0.89/bin/startup.sh
