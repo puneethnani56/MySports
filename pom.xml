@@ -1,92 +1,63 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+pipeline {
+    agent any
 
-  <modelVersion>4.0.0</modelVersion>
+    tools {
+        maven 'Maven3'        // Set this name in Jenkins → Global Tool Configuration
+        jdk 'Java17'          // Set this name as Java 17 path in Jenkins
+    }
 
-  <groupId>com.mysports</groupId>
-  <artifactId>my-sports</artifactId>
-  <packaging>war</packaging>
-  <version>1.0</version>
-  <name>My Sports App</name>
+    environment {
+        SONARQUBE = 'MySonarQube'              // Jenkins → Configure SonarQube servers
+        ARTIFACTORY_CREDS = credentials('artifactory-creds') // Jenkins → Credentials (username/password or API Key)
+    }
 
-  <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/puneethnani56/MySports.git'
+            }
+        }
 
-  <dependencies>
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <version>4.0.1</version>
-      <scope>provided</scope>
-    </dependency>
+        stage('Build & Unit Test') {
+            steps {
+                sh 'mvn clean install'
+            }
+        }
 
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.13.2</version>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
+        stage('Code Coverage Report (JaCoCo)') {
+            steps {
+                sh 'mvn test'
+            }
+        }
 
-  <build>
-    <finalName>my-sports</finalName>
-    <plugins>
-      <!-- JaCoCo for Code Coverage -->
-      <plugin>
-        <groupId>org.jacoco</groupId>
-        <artifactId>jacoco-maven-plugin</artifactId>
-        <version>0.8.8</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>prepare-agent</goal>
-            </goals>
-          </execution>
-          <execution>
-            <id>report</id>
-            <phase>test</phase>
-            <goals>
-              <goal>report</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv("${env.SONARQUBE}") {
+                    sh 'mvn sonar:sonar'
+                }
+            }
+        }
 
-      <!-- Compiler Plugin with Java 8 -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <version>3.8.1</version>
-        <configuration>
-          <source>${maven.compiler.source}</source>
-          <target>${maven.compiler.target}</target>
-        </configuration>
-      </plugin>
+        stage('Deploy Artifact to JFrog Artifactory') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'artifactory-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                    sh '''
+                        mvn deploy -DskipTests \
+                            -DaltDeploymentRepository=jfrog-repo::default::http://localhost:8082/artifactory/libs-release-local \
+                            -Dusername=$USERNAME \
+                            -Dpassword=$PASSWORD
+                    '''
+                }
+            }
+        }
+    }
 
-      <!-- WAR Plugin -->
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>3.3.2</version>
-      </plugin>
-    </plugins>
-  </build>
-
-  <distributionManagement>
-    <repository>
-      <id>jfrog-repo</id>
-      <name>JFrog Release Repository</name>
-      <url>http://localhost:8082/artifactory/libs-release-local</url>
-    </repository>
-    <snapshotRepository>
-      <id>jfrog-repo</id>
-      <name>JFrog Snapshot Repository</name>
-      <url>http://localhost:8082/artifactory/libs-snapshot-local</url>
-    </snapshotRepository>
-  </distributionManagement>
-
-</project>
+    post {
+        success {
+            echo "Build and Deployment successful!"
+        }
+        failure {
+            echo "Build or Deployment failed. Check logs."
+        }
+    }
+}
