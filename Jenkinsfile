@@ -45,12 +45,12 @@ pipeline {
     stage('Upload Artifact to Artifactory') {
       steps {
         withCredentials([usernamePassword(credentialsId: 'artifactory-creds', usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
-          sh '''
-            curl -u $ART_USER:$ART_PASS \
-            -T target/my-sports.war \
-            "http://localhost:8082/artifactory/libs-release-local/com/mysports/my-sports/1.0.0/my-sports-1.0.0.war"
+        sh '''
+          curl -u $ART_USER:$ART_PASS \
+          -T target/my-sports.war \
+          "http://localhost:8082/artifactory/libs-release-local/com/mysports/my-sports/1.0.0/my-sports-1.0.0.war"
           '''
-        }
+        }  
       }
     }
   }
