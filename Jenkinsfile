@@ -2,14 +2,13 @@ pipeline {
     agent any
 
     tools {
-        maven 'Mymaven'        // Jenkins → Global Tool Configuration
-        jdk 'Java17'           // Jenkins → Global Tool Configuration
+        maven 'Mymaven'        // Must match Jenkins Maven tool name
+        jdk 'Java17'           // Must match Jenkins JDK tool name
     }
 
     environment {
-        SONARQUBE = 'MySonarQube'                          // Jenkins → Configure SonarQube servers
-        SONAR_TOKEN = credentials('sonar-token')           // Add your SonarQube token in Jenkins credentials (Secret Text)
-        ARTIFACTORY_CREDS = credentials('artifactory-creds') // Jenkins → Credentials (username/password)
+        SONARQUBE = 'MySonarQube'                           // SonarQube server name (configured in Jenkins)
+        SONAR_TOKEN = credentials('sonar-token')            // Sonar token stored as Secret Text
     }
 
     stages {
@@ -44,7 +43,6 @@ pipeline {
                 withCredentials([
                     usernamePassword(credentialsId: 'artifactory-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')
                 ]) {
-                    // Write custom settings.xml file dynamically
                     writeFile file: 'custom-settings.xml', text: """
                         <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
                                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -60,7 +58,6 @@ pipeline {
                         </settings>
                     """
 
-                    // Use the custom settings file for deployment
                     sh '''
                         mvn deploy -DskipTests \
                             -s custom-settings.xml \
@@ -69,14 +66,25 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to Tomcat via Ansible') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'artifactory-creds', usernameVariable: 'ART_USER', passwordVariable: 'ART_PASS')]) {
+                    sh '''
+                        echo "⚙️ Running Ansible deployment playbook..."
+                        ansible-playbook -i ansible/inventory ansible/deploy.yml -e "art_user=$ART_USER art_pass=$ART_PASS"
+                    '''
+                }
+            }
+        }
     }
 
     post {
         success {
-            echo "✅ Build and Deployment successful!"
+            echo "✅ Build, Upload, and Deployment successful!"
         }
         failure {
-            echo "❌ Build or Deployment failed. Check logs."
+            echo "❌ Build, Upload, or Deployment failed. Please check the logs."
         }
     }
 }
