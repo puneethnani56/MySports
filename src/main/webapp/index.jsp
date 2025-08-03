@@ -1,20 +1,27 @@
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="java.util.*, com.mysports.Product" %>
+<%@ page session="true" %>
+<%
+    response.setCharacterEncoding("UTF-8");
+    List<Product> productList = (List<Product>) application.getAttribute("productList");
+%>
+<!DOCTYPE html>
 <html>
-<head><title>My-Sports Store</title></head>
+<head>
+    <meta charset="UTF-8">
+    <title>My-Sports Store</title>
+</head>
 <body>
 
-<h2>Welcome to My-Sports Online Store</h2>
+<h2>🏪 Welcome to My-Sports Online Store</h2>
 
 <table border="1">
 <tr><th>ID</th><th>Name</th><th>Price</th><th>Action</th></tr>
-<%
-    List<Product> productList = (List<Product>) application.getAttribute("productList");
-    for(Product product : productList) {
-%>
+<% for(Product product : productList) { %>
 <tr>
     <td><%= product.getId() %></td>
     <td><%= product.getName() %></td>
-    <td>₹<%= product.getPrice() %></td>
+    <td>&#8377;<%= product.getPrice() %></td>
     <td>
         <form action="add" method="post">
             <input type="hidden" name="productId" value="<%= product.getId() %>">
