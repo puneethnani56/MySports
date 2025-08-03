@@ -9,8 +9,8 @@ public class LoginServlet extends HttpServlet {
         String username = request.getParameter("username");
         String password = request.getParameter("password");
 
-        if("admin".equals(username) && "admin123".equals(password)) {
-            response.sendRedirect("index.jsp");
+        if ("admin".equals(username) && "admin123".equals(password)) {
+            response.sendRedirect("store");  // 🚀 redirect to product catalog servlet
         } else {
             response.sendRedirect("login.jsp?error=1");
         }
