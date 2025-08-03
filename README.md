@@ -1,4 +1,4 @@
-DevOps Silver Badge Capstone Project 
+DevOps Capstone Project 
 
 Project Title:
 --------------
@@ -131,4 +131,5 @@ Project Status:
 ✅ All Tools Installed & Integrated Locally  
 ✅ WAR File Deployed via Pipeline  
 ✅ Web App Functionality Verified
+
 
