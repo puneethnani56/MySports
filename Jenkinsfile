@@ -5,6 +5,11 @@ pipeline {
         maven 'Mymaven'        // Must match Jenkins Maven tool name
         jdk 'Java17'           // Must match Jenkins JDK tool name
     }
+    parameters {
+    string(name: 'VERSION', defaultValue: '1.0', description: 'App version')
+    choice(name: 'ENV', choices: ['dev', 'test', 'prod'], description: 'Environment')
+    booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run tests?')
+  }
 
     environment {
         SONARQUBE = 'MySonarQube'                           // SonarQube server name (configured in Jenkins)
