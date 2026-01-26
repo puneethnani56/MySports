@@ -25,6 +25,7 @@ pipeline {
 
         stage('Build & Unit Test') {
             steps {
+                sh 'echo Environment is ${ENV}'
                 sh 'mvn clean install'
             }
         }
